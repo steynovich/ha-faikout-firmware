@@ -6,7 +6,7 @@ import struct
 
 from .exceptions import FirmwareParseError
 
-_MAGIC_BYTES = struct.pack("<I", 0xABCD5432)  # b"\x52\x54\xcd\xab"
+_MAGIC_BYTES = struct.pack("<I", 0xABCD5432)  # b"\x32\x54\xcd\xab"
 _VERSION_OFF = 16
 _VERSION_LEN = 32
 
