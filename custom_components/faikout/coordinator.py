@@ -17,12 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 class FaikoutCoordinator(DataUpdateCoordinator[dict[str, str]]):
     """Fetch the latest available firmware version for each known target."""
 
-    def __init__(
-        self, hass: HomeAssistant, client: FaikoutOtaClient, channel: Channel
-    ) -> None:
-        super().__init__(
-            hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL
-        )
+    def __init__(self, hass: HomeAssistant, client: FaikoutOtaClient, channel: Channel) -> None:
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
         self._client = client
         self.channel = channel
 

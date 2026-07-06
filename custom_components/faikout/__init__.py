@@ -32,9 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> b
     if not await mqtt.async_wait_for_mqtt_client(hass):
         raise ConfigEntryNotReady("MQTT is not available")
 
-    channel = Channel(
-        entry.options.get(CONF_CHANNEL, entry.data[CONF_CHANNEL])
-    )
+    channel = Channel(entry.options.get(CONF_CHANNEL, entry.data[CONF_CHANNEL]))
     client = FaikoutOtaClient(async_get_clientsession(hass))
     coordinator = FaikoutCoordinator(hass, client, channel)
     tracker = FaikoutDeviceTracker(hass)

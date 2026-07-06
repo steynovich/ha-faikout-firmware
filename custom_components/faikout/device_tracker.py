@@ -37,22 +37,16 @@ def parse_state_payload(
     dev_id = data.get("id")
     version = data.get("version")
     suffix = data.get("build-suffix")
-    if not (
-        isinstance(dev_id, str) and isinstance(version, str) and isinstance(suffix, str)
-    ):
+    if not (isinstance(dev_id, str) and isinstance(version, str) and isinstance(suffix, str)):
         return None
-    name = topic[len(prefix):] if topic.startswith(prefix) else topic
-    return FaikoutDevice(
-        id=dev_id, name=name, version=version, target=f"Faikout{suffix}"
-    )
+    name = topic[len(prefix) :] if topic.startswith(prefix) else topic
+    return FaikoutDevice(id=dev_id, name=name, version=version, target=f"Faikout{suffix}")
 
 
 class FaikoutDeviceTracker:
     """Subscribe to Faikout state topics and maintain a device map."""
 
-    def __init__(
-        self, hass: HomeAssistant, *, prefix: str = DEFAULT_STATE_PREFIX
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, *, prefix: str = DEFAULT_STATE_PREFIX) -> None:
         self._hass = hass
         self._prefix = prefix
         self.devices: dict[str, FaikoutDevice] = {}

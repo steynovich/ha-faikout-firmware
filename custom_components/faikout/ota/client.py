@@ -44,9 +44,7 @@ class FaikoutOtaClient:
     async def _get_head(self, url: str) -> bytes:
         headers = {"Range": f"bytes=0-{HEAD_BYTES - 1}"}
         try:
-            async with self._session.get(
-                url, headers=headers, timeout=self._timeout
-            ) as resp:
+            async with self._session.get(url, headers=headers, timeout=self._timeout) as resp:
                 resp.raise_for_status()
                 body = await resp.read()
                 if resp.status == 206:
