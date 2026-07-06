@@ -10,6 +10,7 @@ import pytest_socket
 
 from custom_components.faikout.const import Channel, manifest_url_for
 from custom_components.faikout.ota.client import FaikoutOtaClient
+from custom_components.faikout.ota.exceptions import FirmwareFetchError
 
 
 @pytest.mark.network
@@ -23,6 +24,6 @@ async def test_live_version_is_nonempty(channel, socket_enabled):
     try:
         async with aiohttp.ClientSession() as session:
             version = await FaikoutOtaClient(session).async_get_latest_version(url)
-    except aiohttp.ClientError as err:
+    except (aiohttp.ClientError, FirmwareFetchError) as err:
         pytest.skip(f"OTA server unreachable: {err}")
     assert version
