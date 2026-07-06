@@ -1,13 +1,13 @@
 {
   "domain": "faikout",
   "name": "Faikout Firmware Update",
-  "codeowners": ["@steyn"],
+  "codeowners": ["@steynovich"],
   "config_flow": true,
   "dependencies": ["mqtt"],
-  "documentation": "https://github.com/steyn/faikout",
+  "documentation": "https://github.com/steynovich/ha-faikout-firmware",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/steyn/faikout/issues",
+  "issue_tracker": "https://github.com/steynovich/ha-faikout-firmware/issues",
   "requirements": [],
   "version": "0.1.0"
 }
