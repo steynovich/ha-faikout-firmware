@@ -10,8 +10,9 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import CONF_CHANNEL, Channel
+from .const import CONF_CHANNEL, DOMAIN, Channel
 from .coordinator import FaikoutCoordinator
 from .device_tracker import FaikoutDeviceTracker
 from .ota.client import FaikoutOtaClient
@@ -30,7 +31,7 @@ type FaikoutConfigEntry = ConfigEntry[FaikoutRuntimeData]
 
 async def async_setup_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> bool:
     if not await mqtt.async_wait_for_mqtt_client(hass):
-        raise ConfigEntryNotReady("MQTT is not available")
+        raise ConfigEntryNotReady(translation_domain=DOMAIN, translation_key="mqtt_unavailable")
 
     channel = Channel(entry.options.get(CONF_CHANNEL, entry.data[CONF_CHANNEL]))
     client = FaikoutOtaClient(async_get_clientsession(hass))
@@ -59,3 +60,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> 
 
 async def _async_reload(hass: HomeAssistant, entry: FaikoutConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: FaikoutConfigEntry, device: DeviceEntry
+) -> bool:
+    # Faikout devices are known only from live MQTT state messages; there is no
+    # reliable "device gone" signal, so a device that stops reporting lingers in
+    # the registry. Allow the user to delete such stale devices manually.
+    return True

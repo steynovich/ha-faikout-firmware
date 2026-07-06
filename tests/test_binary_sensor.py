@@ -55,6 +55,8 @@ async def test_update_available_when_versions_differ(hass, mqtt_mock):
     state = hass.states.get("binary_sensor.faikout_zolder_firmware_update")
     assert state is not None
     assert state.state == "on"
+    # Name resolves from the entity translation, not a hardcoded _attr_name.
+    assert state.attributes["friendly_name"] == "faikout_zolder Firmware update"
     assert state.attributes["installed_version"] == "0old0000"
     assert state.attributes["latest_version"] == "1a347969"
 

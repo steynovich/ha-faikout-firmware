@@ -3,9 +3,13 @@
 from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.faikout import async_unload_entry
+from custom_components.faikout import (
+    async_remove_config_entry_device,
+    async_unload_entry,
+)
 from custom_components.faikout.const import CONF_CHANNEL, DOMAIN, Channel
 from custom_components.faikout.ota.exceptions import FirmwareFetchError
 
@@ -81,3 +85,23 @@ async def test_unload_entry_skips_tracker_stop_when_platform_unload_fails(hass, 
 
     # The tracker is left running because the platforms did not unload.
     mock_stop.assert_not_called()
+
+
+async def test_stale_device_can_be_removed_manually(hass, mqtt_mock):
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHANNEL: "beta"})
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",
+        return_value="1a347969",
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "24587CDB4CC8")},
+    )
+
+    # Devices are only known from live MQTT, so manual removal is always allowed.
+    assert await async_remove_config_entry_device(hass, entry, device) is True
