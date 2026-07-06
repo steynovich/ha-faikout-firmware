@@ -23,6 +23,12 @@ class FaikoutCoordinator(DataUpdateCoordinator[dict[str, str]]):
         self.channel = channel
 
     async def _async_update_data(self) -> dict[str, str]:
+        # Iterate ALL entries in MANIFEST_URLS for this channel, not just targets seen
+        # among tracked devices, so async_config_entry_first_refresh() validates OTA
+        # connectivity even before any device has reported over MQTT. A FaikoutError
+        # only becomes an UpdateFailed when NO target could be fetched at all: both
+        # transient network errors and permanent data faults are treated as retryable
+        # here, since a server-side data fault may later be corrected server-side.
         result: dict[str, str] = {}
         last_error: Exception | None = None
         for (target, channel), url in MANIFEST_URLS.items():

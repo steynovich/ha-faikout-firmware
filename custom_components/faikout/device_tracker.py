@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -12,8 +11,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import DEFAULT_STATE_PREFIX, SIGNAL_DEVICE_UPDATE
-
-_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -30,7 +27,7 @@ def parse_state_payload(
     """Parse a Faikout MQTT state payload into a FaikoutDevice, or None."""
     try:
         data = json.loads(payload)
-    except (json.JSONDecodeError, ValueError):
+    except ValueError:
         return None
     if not isinstance(data, dict) or data.get("app") != "Faikout":
         return None
