@@ -52,7 +52,7 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
 
     _attr_device_class = BinarySensorDeviceClass.UPDATE
     _attr_has_entity_name = True
-    _attr_name = "Firmware update"
+    _attr_translation_key = "firmware_update"
 
     def __init__(
         self,

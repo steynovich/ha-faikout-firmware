@@ -4,7 +4,10 @@
       "user": {
         "title": "Faikout Firmware Update",
         "description": "Choose which firmware channel to monitor.",
-        "data": { "channel": "Channel" }
+        "data": { "channel": "Channel" },
+        "data_description": {
+          "channel": "Stable tracks released firmware; beta tracks pre-release builds."
+        }
       }
     },
     "abort": {
@@ -15,8 +18,24 @@
     "step": {
       "init": {
         "title": "Faikout Firmware Update",
-        "data": { "channel": "Channel" }
+        "data": { "channel": "Channel" },
+        "data_description": {
+          "channel": "Stable tracks released firmware; beta tracks pre-release builds."
+        }
       }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "firmware_update": { "name": "Firmware update" }
+    }
+  },
+  "exceptions": {
+    "mqtt_unavailable": {
+      "message": "MQTT is not available."
+    },
+    "cannot_fetch_version": {
+      "message": "No firmware versions could be fetched: {error}"
     }
   }
 }

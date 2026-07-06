@@ -1,0 +1,112 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: This integration registers no service actions.
+  appropriate-polling: done
+  brands:
+    status: todo
+    comment: >-
+      Requires an icon/logo PR merged into home-assistant/brands for the
+      "faikout" domain. Tracked separately; the brands check stays ignored in
+      the validate workflow until that PR merges.
+  common-modules: done
+  config-flow-test-coverage: done
+  config-flow: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: This integration registers no service actions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure:
+    status: exempt
+    comment: >-
+      The config flow only selects a firmware channel; it takes no host or
+      credentials, so there is no connection to validate at configure time.
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions:
+    status: exempt
+    comment: This integration registers no service actions.
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: >-
+      No authentication is used: OTA manifests are fetched anonymously and MQTT
+      auth is handled by the mqtt integration.
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: >-
+      Single-instance cloud-polling hub with no network endpoint of its own to
+      discover. Faikout devices are discovered by the mqtt integration and
+      consumed via MQTT subscriptions.
+  discovery-update-info:
+    status: exempt
+    comment: >-
+      No per-integration network host to update; OTA endpoints are fixed cloud
+      URLs and device transport is MQTT topics, not IP addresses.
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices: done
+  entity-category:
+    status: exempt
+    comment: >-
+      The sole entity is the integration's primary feature, not a diagnostic or
+      configuration entity.
+  entity-device-class: done
+  entity-disabled-by-default:
+    status: exempt
+    comment: Only one primary entity type exists; there is nothing noisy to disable.
+  entity-translations: done
+  exception-translations: done
+  icon-translations:
+    status: exempt
+    comment: >-
+      The only entity uses BinarySensorDeviceClass.UPDATE, which supplies the
+      appropriate state icons automatically.
+  reconfiguration-flow:
+    status: exempt
+    comment: >-
+      The only user-adjustable setting is the firmware channel, which is fully
+      handled by the options flow; there are no connection parameters to change.
+  repair-issues:
+    status: exempt
+    comment: >-
+      There are no user-actionable, fixable conditions the integration must
+      surface as repair issues.
+  stale-devices: done
+
+  # Platinum
+  async-dependency:
+    status: exempt
+    comment: >-
+      No external library dependency; the OTA client is built in-house on the
+      Home Assistant aiohttp session.
+  inject-websession: done
+  strict-typing:
+    status: todo
+    comment: Not targeting Platinum; strict typing not yet asserted.

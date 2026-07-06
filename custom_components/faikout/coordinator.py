@@ -40,5 +40,9 @@ class FaikoutCoordinator(DataUpdateCoordinator[dict[str, str]]):
                 last_error = err
                 _LOGGER.debug("Failed to fetch latest version for %s: %s", target, err)
         if not result:
-            raise UpdateFailed(f"no firmware versions could be fetched: {last_error}")
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="cannot_fetch_version",
+                translation_placeholders={"error": str(last_error)},
+            )
         return result
