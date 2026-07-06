@@ -1,8 +1,13 @@
 from custom_components.faikout.const import (
-    Channel, manifest_url_for, MANIFEST_URLS, DOMAIN,
+    DOMAIN,
+    Channel,
+    manifest_url_for,
 )
 from custom_components.faikout.ota.exceptions import (
-    FaikoutError, ManifestError, FirmwareParseError, FirmwareFetchError,
+    FaikoutError,
+    FirmwareFetchError,
+    FirmwareParseError,
+    ManifestError,
 )
 
 

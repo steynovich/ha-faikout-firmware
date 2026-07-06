@@ -10,8 +10,8 @@ MAGIC = 0xABCD5432
 
 def _descriptor(version="1a347969"):
     body = struct.pack("<II", MAGIC, 0) + b"\x00" * 8
-    body += version.encode("ascii").ljust(32, b"\x00")   # version[32]
-    body += b"Faikout".ljust(32, b"\x00")                # project_name[32]
+    body += version.encode("ascii").ljust(32, b"\x00")  # version[32]
+    body += b"Faikout".ljust(32, b"\x00")  # project_name[32]
     return body
 
 
@@ -32,3 +32,8 @@ def test_missing_magic_raises():
 def test_truncated_after_magic_raises():
     with pytest.raises(FirmwareParseError):
         parse_app_descriptor(_descriptor()[:30])
+
+
+def test_empty_version_raises():
+    with pytest.raises(FirmwareParseError):
+        parse_app_descriptor(_descriptor(version=""))

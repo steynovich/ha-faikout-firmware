@@ -18,9 +18,11 @@ class StubClient:
 
 
 async def test_update_returns_target_to_version(hass):
-    client = StubClient({
-        "https://ota.faikout.uk/beta/Faikout-S3-MINI-N4-R2-beta-manifest.json": "1a347969",
-    })
+    client = StubClient(
+        {
+            "https://ota.faikout.uk/beta/Faikout-S3-MINI-N4-R2-beta-manifest.json": "1a347969",
+        }
+    )
     coordinator = FaikoutCoordinator(hass, client, Channel.BETA)
     data = await coordinator._async_update_data()
     assert data == {"Faikout-S3-MINI-N4-R2": "1a347969"}

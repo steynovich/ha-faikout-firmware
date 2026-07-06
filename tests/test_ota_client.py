@@ -3,7 +3,7 @@ import struct
 import aiohttp
 import pytest
 
-from custom_components.faikout.ota.client import FaikoutOtaClient, HEAD_BYTES
+from custom_components.faikout.ota.client import HEAD_BYTES, FaikoutOtaClient
 from custom_components.faikout.ota.exceptions import FirmwareFetchError
 
 MAGIC = 0xABCD5432
@@ -89,3 +89,19 @@ async def test_timeout_wrapped():
 
     with pytest.raises(FirmwareFetchError):
         await FaikoutOtaClient(TimeoutSession()).async_get_latest_version("https://m")
+
+
+@pytest.mark.asyncio
+async def test_head_fetch_error_wrapped():
+    class ManifestThenBoomSession:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, url, headers=None, timeout=None):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse(200, MANIFEST)
+            raise aiohttp.ClientError("boom")
+
+    with pytest.raises(FirmwareFetchError):
+        await FaikoutOtaClient(ManifestThenBoomSession()).async_get_latest_version("https://m")

@@ -40,3 +40,8 @@ def test_missing_flash_raises():
 def test_app_entry_without_url_raises():
     with pytest.raises(ManifestError):
         parse_manifest({"flash": [{"address": "10000", "app": True}]})
+
+
+def test_non_dict_json_raises():
+    with pytest.raises(ManifestError):
+        parse_manifest(json.dumps([1, 2, 3]))
