@@ -18,3 +18,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # 'brands' requires registration in home-assistant/brands (needs a
+          # proper square/transparent logo). Ignored until that PR is submitted;
+          # does not affect custom-repository installation.
+          ignore: brands
