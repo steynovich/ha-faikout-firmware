@@ -15,3 +15,12 @@ class FirmwareParseError(FaikoutError):
 
 class FirmwareFetchError(FaikoutError):
     """A network request to the OTA server failed."""
+
+
+class FirmwareUnavailableError(FirmwareFetchError):
+    """The OTA server could not be reached at all (connection refused, timeout).
+
+    Distinct from a plain FirmwareFetchError, which also covers a server that
+    answered with an error status: a 404 is a broken URL worth failing on, while
+    an unreachable host is an environment problem worth skipping or retrying.
+    """

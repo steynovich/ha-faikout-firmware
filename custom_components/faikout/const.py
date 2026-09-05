@@ -19,9 +19,9 @@ class Channel(StrEnum):
 
 
 MANIFEST_URLS: dict[tuple[str, Channel], str] = {
-    ("Faikout-S3-MINI-N4-R2", Channel.STABLE): (
-        "https://ota.faikout.uk/Faikin-S3-MINI-N4-R2-manifest.json"
-    ),
+    # The stable channel is published as the unversioned "Faikout.manifest"; the
+    # per-target "Faikout-S3-MINI-N4-R2-manifest.json" path 404s on the OTA server.
+    ("Faikout-S3-MINI-N4-R2", Channel.STABLE): "https://ota.faikout.uk/Faikout.manifest",
     ("Faikout-S3-MINI-N4-R2", Channel.BETA): (
         "https://ota.faikout.uk/beta/Faikout-S3-MINI-N4-R2-beta-manifest.json"
     ),

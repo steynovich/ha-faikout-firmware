@@ -10,7 +10,7 @@ import pytest_socket
 
 from custom_components.faikout.const import Channel, manifest_url_for
 from custom_components.faikout.ota.client import FaikoutOtaClient
-from custom_components.faikout.ota.exceptions import FirmwareFetchError
+from custom_components.faikout.ota.exceptions import FirmwareUnavailableError
 
 
 @pytest.mark.network
@@ -21,9 +21,13 @@ async def test_live_version_is_nonempty(channel, socket_enabled):
     # socket ban, and this call lifts the host allow-list for the real OTA host.
     pytest_socket.socket_allow_hosts(["ota.faikout.uk"], allow_unix_socket=True)
     url = manifest_url_for("Faikout-S3-MINI-N4-R2", channel)
+    assert url is not None
     try:
         async with aiohttp.ClientSession() as session:
             version = await FaikoutOtaClient(session).async_get_latest_version(url)
-    except (aiohttp.ClientError, FirmwareFetchError) as err:
+    except (aiohttp.ClientConnectionError, FirmwareUnavailableError) as err:
+        # Only an unreachable host is an environment problem worth skipping. A 404
+        # or a malformed manifest is a real defect and must fail the run: a blanket
+        # FirmwareFetchError skip previously hid a dead stable-channel URL.
         pytest.skip(f"OTA server unreachable: {err}")
     assert version
