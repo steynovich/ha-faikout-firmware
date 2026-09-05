@@ -17,9 +17,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import FaikoutConfigEntry
-from .const import CONF_CHANNEL, DOMAIN, MANUFACTURER, SIGNAL_DEVICE_UPDATE
+from .const import DOMAIN, MANUFACTURER, SIGNAL_DEVICE_UPDATE
 from .coordinator import FaikoutCoordinator
-from .device_tracker import FaikoutDeviceTracker
+from .device_tracker import FaikoutDevice, FaikoutDeviceTracker
 
 PARALLEL_UPDATES = 0
 
@@ -37,9 +37,7 @@ async def async_setup_entry(
         if device_id in known or device_id not in data.tracker.devices:
             return
         known.add(device_id)
-        async_add_entities(
-            [FirmwareUpdateBinarySensor(data.coordinator, data.tracker, entry, device_id)]
-        )
+        async_add_entities([FirmwareUpdateBinarySensor(data.coordinator, data.tracker, device_id)])
 
     for device_id in list(data.tracker.devices):
         _add(device_id)
@@ -58,12 +56,10 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
         self,
         coordinator: FaikoutCoordinator,
         tracker: FaikoutDeviceTracker,
-        entry: FaikoutConfigEntry,
         device_id: str,
     ) -> None:
         super().__init__(coordinator)
         self._tracker = tracker
-        self._entry = entry
         self._device_id = device_id
         self._attr_unique_id = f"{device_id}_firmware_update"
         device = tracker.devices[device_id]
@@ -76,20 +72,25 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
         )
 
     @property
+    def _device(self) -> FaikoutDevice | None:
+        # The tracker drops a device when MQTT stops reporting it, so every read
+        # goes through here rather than caching the instance from __init__.
+        return self._tracker.devices.get(self._device_id)
+
+    @property
     def _latest(self) -> str | None:
-        device = self._tracker.devices.get(self._device_id)
+        device = self._device
         if device is None:
             return None
         return self.coordinator.data.get(device.target)
 
     @property
     def available(self) -> bool:
-        device = self._tracker.devices.get(self._device_id)
-        return super().available and device is not None and self._latest is not None
+        return super().available and self._device is not None and self._latest is not None
 
     @property
     def is_on(self) -> bool | None:
-        device = self._tracker.devices.get(self._device_id)
+        device = self._device
         latest = self._latest
         if device is None or latest is None:
             return None
@@ -97,11 +98,11 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
-        device = self._tracker.devices.get(self._device_id)
+        device = self._device
         return {
             "installed_version": device.version if device else None,
             "latest_version": self._latest,
-            "channel": self._entry.options.get(CONF_CHANNEL, self._entry.data[CONF_CHANNEL]),
+            "channel": self.coordinator.channel.value,
             "target": device.target if device else None,
         }
 

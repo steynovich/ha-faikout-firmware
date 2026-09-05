@@ -20,7 +20,7 @@ STATE = json.dumps(
 
 
 async def test_diagnostics_reports_channel_versions_and_redacts_id(hass, mqtt_mock):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHANNEL: "beta"})
+    entry = MockConfigEntry(domain=DOMAIN, version=2, options={CONF_CHANNEL: "beta"})
     entry.add_to_hass(hass)
     with patch(
         "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",

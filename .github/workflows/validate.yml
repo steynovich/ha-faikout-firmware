@@ -2,6 +2,7 @@ name: Validate
 on:
   push:
   pull_request:
+  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
 
@@ -11,6 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: home-assistant/actions/hassfest@master
+  ota:
+    # The offline suite cannot notice a dead OTA URL: a 404 on the stable manifest
+    # went unseen for two months because the only live check skipped on any fetch
+    # error. Run it nightly, off the PR path, so an upstream outage blocks nobody.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --dev
+      - run: uv run pytest -m network
+
   hacs:
     runs-on: ubuntu-latest
     steps:
