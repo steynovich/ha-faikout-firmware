@@ -36,7 +36,7 @@ STATE_UNKNOWN_TARGET = json.dumps(
 
 
 async def _setup(hass, mqtt_mock):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHANNEL: "beta"})
+    entry = MockConfigEntry(domain=DOMAIN, version=2, options={CONF_CHANNEL: "beta"})
     entry.add_to_hass(hass)
     with patch(
         "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",
@@ -59,6 +59,9 @@ async def test_update_available_when_versions_differ(hass, mqtt_mock):
     assert state.attributes["friendly_name"] == "faikout_zolder Firmware update"
     assert state.attributes["installed_version"] == "0old0000"
     assert state.attributes["latest_version"] == "1a347969"
+    # The channel is reported from the coordinator, the one object that resolved it.
+    assert state.attributes["channel"] == "beta"
+    assert state.attributes["target"] == "Faikout-S3-MINI-N4-R2"
 
 
 async def test_up_to_date_when_versions_match(hass, mqtt_mock):
@@ -93,7 +96,7 @@ async def test_unavailable_when_target_has_no_latest_version(hass, mqtt_mock):
 
 
 async def test_preexisting_device_gets_entity_at_setup(hass, mqtt_mock):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_CHANNEL: "beta"})
+    entry = MockConfigEntry(domain=DOMAIN, version=2, options={CONF_CHANNEL: "beta"})
     entry.add_to_hass(hass)
     device = FaikoutDevice(
         id="112233445566",

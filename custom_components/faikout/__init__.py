@@ -29,11 +29,28 @@ class FaikoutRuntimeData:
 type FaikoutConfigEntry = ConfigEntry[FaikoutRuntimeData]
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> bool:
+    if entry.version > 2:
+        # Written by a newer release of this integration; refuse rather than guess.
+        return False
+    if entry.version == 1:
+        # v1 wrote the channel to entry.data at creation and to entry.options on
+        # change, so every reader had to consult both. Collapse onto options,
+        # preferring the options value because it is the one the user last chose.
+        data = dict(entry.data)
+        stale_channel = data.pop(CONF_CHANNEL, Channel.STABLE.value)
+        channel = entry.options.get(CONF_CHANNEL, stale_channel)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options={**entry.options, CONF_CHANNEL: channel}, version=2
+        )
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> bool:
     if not await mqtt.async_wait_for_mqtt_client(hass):
         raise ConfigEntryNotReady(translation_domain=DOMAIN, translation_key="mqtt_unavailable")
 
-    channel = Channel(entry.options.get(CONF_CHANNEL, entry.data[CONF_CHANNEL]))
+    channel = Channel(entry.options.get(CONF_CHANNEL, Channel.STABLE.value))
     client = FaikoutOtaClient(async_get_clientsession(hass))
     coordinator = FaikoutCoordinator(hass, client, channel)
     tracker = FaikoutDeviceTracker(hass)

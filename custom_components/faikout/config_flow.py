@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.components import mqtt
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -21,15 +22,26 @@ _CHANNELS = [c.value for c in Channel]
 class FaikoutConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the initial configuration."""
 
+    # v2 moved the channel from entry.data to entry.options.
+    VERSION = 2
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
-        if user_input is not None:
-            return self.async_create_entry(title="Faikout Firmware Update", data=user_input)
-        schema = vol.Schema(
-            {vol.Required(CONF_CHANNEL, default=Channel.STABLE.value): vol.In(_CHANNELS)}
-        )
-        return self.async_show_form(step_id="user", data_schema=schema)
+        if user_input is None:
+            # MQTT is a hard dependency: without it no device is ever discovered.
+            # Checked here, on the way to the form, so it runs once per flow rather
+            # than again on submit — it can wait up to 50s while MQTT is still
+            # setting up — and so the user is turned away before picking a channel.
+            if not await mqtt.async_wait_for_mqtt_client(self.hass):
+                return self.async_abort(reason="mqtt_unavailable")
+            schema = vol.Schema(
+                {vol.Required(CONF_CHANNEL, default=Channel.STABLE.value): vol.In(_CHANNELS)}
+            )
+            return self.async_show_form(step_id="user", data_schema=schema)
+        # The channel does not establish the connection, so it lives in options and
+        # stays a single source of truth for the options flow to rewrite.
+        return self.async_create_entry(title="Faikout Firmware Update", data={}, options=user_input)
 
     @staticmethod
     @callback
@@ -43,8 +55,6 @@ class FaikoutOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
-        current = self.config_entry.options.get(
-            CONF_CHANNEL, self.config_entry.data.get(CONF_CHANNEL, Channel.STABLE.value)
-        )
+        current = self.config_entry.options.get(CONF_CHANNEL, Channel.STABLE.value)
         schema = vol.Schema({vol.Required(CONF_CHANNEL, default=current): vol.In(_CHANNELS)})
         return self.async_show_form(step_id="init", data_schema=schema)
