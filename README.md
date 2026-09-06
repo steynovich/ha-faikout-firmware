@@ -1,10 +1,10 @@
 # Faikout Firmware Update
 
-A Home Assistant custom integration (HACS) that adds a **firmware-update-available**
+A Home Assistant custom integration (HACS) that adds a firmware-update-available
 `binary_sensor` to each Faikout device. It reads each device's installed firmware
 version from MQTT and compares it against the latest version published on the
-Faikout OTA server for the channel you select (stable or beta). Notification only —
-it does not flash firmware.
+Faikout OTA server for the channel you select, stable or beta. It only notifies
+you; it does not flash firmware.
 
 ## Use cases
 
@@ -37,24 +37,24 @@ add the **Faikout Firmware Update** integration and pick a channel.
 ## Configuration
 
 The integration has a single option, set when you add it and changeable later via
-the integration's **Configure** dialog:
+the integration's **Configure** dialog.
 
-- **Channel** — which firmware track to compare against:
-  - `stable` — released firmware (default).
-  - `beta` — pre-release builds.
-
-Changing the channel reloads the integration and re-evaluates every device.
+Channel decides which firmware track to compare against. `stable` is released
+firmware and the default; `beta` is pre-release builds. Changing the channel
+reloads the integration and re-evaluates every device.
 
 ## Entities
 
-Per device: `binary_sensor.<device>_firmware_update` — `on` when an update is
-available. Attributes: `installed_version`, `latest_version`, `channel`, `target`.
+Per device: `binary_sensor.<device>_firmware_update`, which is `on` when an
+update is available. Attributes: `installed_version`, `latest_version`,
+`channel`, `target`.
 
 ## Data updates
 
-- **Installed version** is received via MQTT push: the integration subscribes to
-  `state/<hostname>` and updates a device the moment it reports.
-- **Latest available version** is polled from the OTA server every **3 hours**.
+The installed version arrives by MQTT push. The integration subscribes to
+`state/<hostname>` and updates a device the moment it reports.
+
+The latest available version is polled from the OTA server every 3 hours.
 
 A device's binary sensor turns `on` when the two versions differ.
 
@@ -88,24 +88,28 @@ automation:
 
 ## Known limitations
 
-- **Notification only** — it does not flash or install firmware.
-- **Single instance** — only one configuration is supported.
-- Only the hardware targets listed under **Supported devices** are resolved;
-  other targets show as `unavailable`.
-- Requires the Home Assistant **MQTT** integration and devices that publish the
+- It only notifies you. It does not flash or install firmware.
+- Only one configuration is supported.
+- Only the hardware targets listed under Supported devices are resolved. Other
+  targets show as `unavailable`.
+- It requires the Home Assistant MQTT integration and devices that publish the
   expected `state/<hostname>` payload.
-- **No automatic stale-device cleanup** — a device that stops reporting over MQTT
-  is not removed automatically; delete it manually (see below).
+- A device that stops reporting over MQTT is not removed automatically. Delete it
+  manually, as described below.
 
 ## Troubleshooting
 
-- **Entity is `unavailable`** — the device has not reported over MQTT yet, or its
-  target is not supported. Confirm the MQTT integration is connected and the
-  device is publishing `state/<hostname>` with `version` and `build-suffix`.
-- **No entities appear** — check that MQTT is set up and the devices are online;
-  entities are created only after a device's first state message.
-- **Diagnostics** — download diagnostics from the integration's device page to
-  inspect the selected channel, latest versions, and tracked devices.
+If the entity shows as `unavailable`, the device has not reported over MQTT yet,
+or its target is not supported. Confirm the MQTT integration is connected and
+that the device is publishing `state/<hostname>` with `version` and
+`build-suffix`.
+
+If no entities appear at all, check that MQTT is set up and the devices are
+online. Entities are created only after a device's first state message.
+
+To see what the integration currently holds, download diagnostics from its
+device page. They list the selected channel, the latest versions, and the
+tracked devices.
 
 ## Removing a device
 

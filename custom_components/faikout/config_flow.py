@@ -31,8 +31,9 @@ class FaikoutConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is None:
             # MQTT is a hard dependency: without it no device is ever discovered.
             # Checked here, on the way to the form, so it runs once per flow rather
-            # than again on submit — it can wait up to 50s while MQTT is still
-            # setting up — and so the user is turned away before picking a channel.
+            # than again on submit. The call can block for up to 50s while MQTT is
+            # still setting up, and checking now turns the user away before they
+            # have picked a channel.
             if not await mqtt.async_wait_for_mqtt_client(self.hass):
                 return self.async_abort(reason="mqtt_unavailable")
             schema = vol.Schema(
