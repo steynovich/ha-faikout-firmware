@@ -1,4 +1,4 @@
-# Faikout Firmware Update Integration — Implementation Plan
+# Faikout Firmware Update Integration: Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -11,8 +11,8 @@
 ## Global Constraints
 
 - Integration domain: `faikout`. Layout: `custom_components/faikout/`. HACS category: integration.
-- The OTA core under `custom_components/faikout/ota/` imports **only** `aiohttp` — no Home Assistant imports — so it stays pure and unit-testable.
-- Never hardcode the app image `.bin` URL — always follow the manifest's `app: true` entry.
+- The OTA core under `custom_components/faikout/ota/` imports **only** `aiohttp`, with no Home Assistant imports, so it stays pure and unit-testable.
+- Never hardcode the app image `.bin` URL. Always follow the manifest's `app: true` entry.
 - `(target, channel) → manifest URL` is a lookup table; unknown target → sensor `unavailable`, never a guessed URL.
   - `("Faikout-S3-MINI-N4-R2", stable)` → `https://ota.faikout.uk/Faikin-S3-MINI-N4-R2-manifest.json`
   - `("Faikout-S3-MINI-N4-R2", beta)` → `https://ota.faikout.uk/beta/Faikout-S3-MINI-N4-R2-beta-manifest.json`
@@ -20,7 +20,7 @@
 - Installed version and target come from the device MQTT state payload: `version`, and `app` + `build-suffix` (target = `app + build-suffix`). Compare with exact string equality.
 - OTA fetch: first 512 bytes via HTTP Range (full-GET fallback); `request_timeout` default 30 s; wrap `aiohttp.ClientError`/`TimeoutError`/bad status in `FirmwareFetchError`; never close the injected session.
 
-**Quality bar — Home Assistant Silver (applicable rules):**
+**Quality bar: Home Assistant Silver (applicable rules):**
 - `manifest.json` with `version`, `codeowners`, `iot_class`, `config_flow: true`, `dependencies: ["mqtt"]`; `hacs.json`; MIT `LICENSE`; CI running hassfest + HACS validation + tests.
 - `ruff` clean; `mypy` clean (strict on the `ota` subpackage); **≥95% coverage** on the non-network suite.
 - `runtime-data`, `config-entry-unloading` (unload unsubscribes MQTT), `unique-config-entry` (single instance), `appropriate-polling` (3 h), `test-before-setup` (`async_config_entry_first_refresh`), `entity-unavailable` + `log-when-unavailable`, `PARALLEL_UPDATES = 0`.
@@ -30,7 +30,7 @@
 ### Task 1: Repo scaffold (HACS layout, tooling, CI)
 
 **Files:**
-- Create: `pyproject.toml`, `LICENSE`, `hacs.json`, `README.md`, `.gitignore` (already exists — leave)
+- Create: `pyproject.toml`, `LICENSE`, `hacs.json`, `README.md`, `.gitignore` (already exists, leave it)
 - Create: `custom_components/faikout/manifest.json`
 - Create: `custom_components/faikout/__init__.py` (temporary stub)
 - Create: `tests/__init__.py`, `tests/conftest.py`
@@ -156,7 +156,7 @@ SOFTWARE.
 """The Faikout Firmware Update integration."""
 ```
 
-`tests/__init__.py` — empty file.
+`tests/__init__.py` is an empty file.
 
 `tests/conftest.py`:
 
@@ -252,7 +252,7 @@ jobs:
 - [ ] **Step 8: Sync and verify tooling**
 
 Run: `uv python pin 3.13 && uv sync && uv run ruff check . && uv run pytest -q`
-Expected: environment resolves (pulls in `homeassistant` via the test harness); ruff clean; pytest reports "no tests ran" (exit 5) or 0 tests — acceptable at this stage.
+Expected: environment resolves (pulls in `homeassistant` via the test harness); ruff clean; pytest reports "no tests ran" (exit 5) or 0 tests, which is acceptable at this stage.
 
 - [ ] **Step 9: Commit**
 
@@ -322,7 +322,7 @@ def test_exception_hierarchy():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_const.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.const'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.const'`.
 
 - [ ] **Step 3: Write `ota/__init__.py` and `ota/exceptions.py`**
 
@@ -415,7 +415,7 @@ git commit -m "feat: add constants, channel/URL map, and OTA exceptions"
 
 **Interfaces:**
 - Consumes: `ManifestError`.
-- Produces: `parse_manifest(data: bytes | str | dict) -> str` — the `app: true` entry's URL. Raises `ManifestError` on invalid JSON, non-object payload, missing/empty `flash`, no `app: true` entry, or an app entry without a `url`.
+- Produces: `parse_manifest(data: bytes | str | dict) -> str`, which returns the `app: true` entry's URL. Raises `ManifestError` on invalid JSON, non-object payload, missing/empty `flash`, no `app: true` entry, or an app entry without a `url`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -469,7 +469,7 @@ def test_app_entry_without_url_raises():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_ota_manifest.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.ota.manifest'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.ota.manifest'`.
 
 - [ ] **Step 3: Write `ota/manifest.py`**
 
@@ -533,7 +533,7 @@ git commit -m "feat: parse OTA manifest to app image URL"
 
 **Interfaces:**
 - Consumes: `FirmwareParseError`.
-- Produces: `parse_app_descriptor(head: bytes) -> str` — the version string. Locates magic `0xABCD5432` (bytes `52 54 CD AB`), reads the 32-byte null-padded `version` field at magic+16. Raises `FirmwareParseError` if the magic is absent or the buffer is truncated before magic+48.
+- Produces: `parse_app_descriptor(head: bytes) -> str`, which returns the version string. Locates magic `0xABCD5432` (bytes `52 54 CD AB`), reads the 32-byte null-padded `version` field at magic+16. Raises `FirmwareParseError` if the magic is absent or the buffer is truncated before magic+48.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -579,7 +579,7 @@ def test_truncated_after_magic_raises():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_ota_parser.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.ota.parser'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.ota.parser'`.
 
 - [ ] **Step 3: Write `ota/parser.py`**
 
@@ -741,7 +741,7 @@ async def test_timeout_wrapped():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_ota_client.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.ota.client'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.ota.client'`.
 
 - [ ] **Step 3: Write `ota/client.py`**
 
@@ -871,7 +871,7 @@ async def test_all_failures_raise_update_failed(hass):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_coordinator.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.coordinator'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.coordinator'`.
 
 - [ ] **Step 3: Write `coordinator.py`**
 
@@ -944,7 +944,7 @@ git commit -m "feat: add firmware-version coordinator"
 - Consumes: `DEFAULT_STATE_PREFIX`, `SIGNAL_DEVICE_UPDATE`; `homeassistant.components.mqtt`, `async_dispatcher_send`.
 - Produces:
   - `@dataclass(frozen=True) class FaikoutDevice`: `id: str`, `name: str`, `version: str`, `target: str`.
-  - `def parse_state_payload(topic: str, payload: str, *, prefix: str = DEFAULT_STATE_PREFIX) -> FaikoutDevice | None` — returns a device for Faikout state JSON (`app == "Faikout"` with string `id`, `version`, `build-suffix`), else `None`. `target = app + build-suffix`; `name = topic removeprefix prefix`.
+  - `def parse_state_payload(topic: str, payload: str, *, prefix: str = DEFAULT_STATE_PREFIX) -> FaikoutDevice | None` returns a device for Faikout state JSON (`app == "Faikout"` with string `id`, `version`, `build-suffix`), else `None`. `target = app + build-suffix`; `name = topic removeprefix prefix`.
   - `class FaikoutDeviceTracker`: `__init__(self, hass, *, prefix=DEFAULT_STATE_PREFIX)`; attribute `devices: dict[str, FaikoutDevice]`; `async def async_start()` (subscribes to `f"{prefix}+"`); `async def async_stop()` (unsubscribes). On a message that parses to a device, stores it and fires `async_dispatcher_send(hass, SIGNAL_DEVICE_UPDATE, device.id)`.
 
 - [ ] **Step 1: Write the failing test (pure parser + tracker via mqtt mock)**
@@ -997,7 +997,7 @@ async def test_tracker_records_device(hass, mqtt_mock):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_device_tracker.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'custom_components.faikout.device_tracker'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'custom_components.faikout.device_tracker'`.
 
 - [ ] **Step 3: Write `device_tracker.py`**
 
@@ -1147,7 +1147,7 @@ async def test_single_instance(hass):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_config_flow.py -v`
-Expected: FAIL — flow handler not registered / module missing.
+Expected: FAIL, because the flow handler is not registered and the module is missing.
 
 - [ ] **Step 3: Write `config_flow.py`**
 
@@ -1302,7 +1302,7 @@ async def test_setup_and_unload(hass, mqtt_mock):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_init.py -v`
-Expected: FAIL — `async_setup_entry` not defined.
+Expected: FAIL with `async_setup_entry` not defined.
 
 - [ ] **Step 3: Rewrite `__init__.py`**
 
@@ -1396,7 +1396,7 @@ git commit -m "feat: wire up entry setup and unload"
 - Consumes: `FaikoutConfigEntry`, `FaikoutCoordinator`, `FaikoutDeviceTracker`, `CONF_CHANNEL`, `DOMAIN`, `MANUFACTURER`, `SIGNAL_DEVICE_UPDATE`.
 - Produces:
   - `PARALLEL_UPDATES = 0`.
-  - `async def async_setup_entry(hass, entry, async_add_entities)` — adds a `FirmwareUpdateBinarySensor` for each already-known device and, via `async_dispatcher_connect(SIGNAL_DEVICE_UPDATE)`, for each newly discovered device (dedup by id).
+  - `async def async_setup_entry(hass, entry, async_add_entities)` adds a `FirmwareUpdateBinarySensor` for each already-known device and, via `async_dispatcher_connect(SIGNAL_DEVICE_UPDATE)`, for each newly discovered device (dedup by id).
   - `class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySensorEntity)`: `device_class = UPDATE`, `has_entity_name = True`, name "Firmware update", `unique_id = f"{id}_firmware_update"`. `is_on` = installed != latest; `available` = device present and latest known; attributes `installed_version`, `latest_version`, `channel`, `target`; `device_info` linked via `CONNECTION_NETWORK_MAC` + `(DOMAIN, id)`. Refreshes on the device dispatcher signal for its own id.
 
 - [ ] **Step 1: Write the failing test**
@@ -1458,7 +1458,7 @@ async def test_up_to_date_when_versions_match(hass, mqtt_mock):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_binary_sensor.py -v`
-Expected: FAIL — platform/module missing; no entity created.
+Expected: FAIL, because the platform module is missing, so no entity is created.
 
 - [ ] **Step 3: Write `binary_sensor.py`**
 
