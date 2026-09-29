@@ -148,3 +148,18 @@ async def test_unavailable_when_device_goes_quiet_and_recovers(hass, mqtt_mock, 
     await async_publish(hass, "state/faikout_zolder", STATE_OLD)
     await hass.async_block_till_done()
     assert hass.states.get(entity_id).state == "on"
+
+
+async def test_sensor_survives_its_device_being_forgotten(hass, mqtt_mock):
+    entry = await _setup(hass, mqtt_mock)
+    await async_publish(hass, "state/faikout_zolder", STATE_OLD)
+    await hass.async_block_till_done()
+
+    # Removal forgets the device before Home Assistant drops the entity; a state
+    # write in that gap must not raise.
+    entry.runtime_data.tracker.forget("24587CDB4CC8")
+    entry.runtime_data.coordinator.async_update_listeners()
+    await hass.async_block_till_done()
+
+    state = hass.states.get("binary_sensor.faikout_zolder_firmware_update")
+    assert state.state == "unavailable"

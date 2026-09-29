@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import FaikoutConfigEntry
 from .const import DOMAIN, MANUFACTURER, SIGNAL_DEVICE_UPDATE
 from .coordinator import FaikoutCoordinator
-from .device_tracker import FaikoutDevice, FaikoutDeviceTracker
+from .device_tracker import FaikoutDeviceTracker
 
 PARALLEL_UPDATES = 0
 
@@ -62,7 +62,9 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
         self._tracker = tracker
         self._device_id = device_id
         self._attr_unique_id = f"{device_id}_firmware_update"
-        device = tracker.devices[device_id]
+        # Last device seen for this id. The tracker forgets a device on removal, and
+        # the entity may be read once more before Home Assistant drops it.
+        self._device = device = tracker.devices[device_id]
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device_id)},
             connections={(CONNECTION_NETWORK_MAC, format_mac(device_id))},
@@ -70,12 +72,6 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
             manufacturer=MANUFACTURER,
             model=device.target,
         )
-
-    @property
-    def _device(self) -> FaikoutDevice:
-        # Read through the tracker each time: it replaces the instance whenever a
-        # state message changes the device.
-        return self._tracker.devices[self._device_id]
 
     @property
     def _latest(self) -> str | None:
@@ -115,4 +111,5 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
     @callback
     def _handle_device_update(self, device_id: str) -> None:
         if device_id == self._device_id:
+            self._device = self._tracker.devices.get(device_id, self._device)
             self.async_write_ha_state()

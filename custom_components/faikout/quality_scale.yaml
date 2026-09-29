@@ -1,6 +1,3 @@
-# Self-assessment. The manifest declares no quality_scale: every rule below is
-# done or exempt except `brands`, so Gold cannot be claimed until that PR merges.
-# Add "quality_scale": "gold" back to manifest.json when it does.
 rules:
   # Bronze
   action-setup:

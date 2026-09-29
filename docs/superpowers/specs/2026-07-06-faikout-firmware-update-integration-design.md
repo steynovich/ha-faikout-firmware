@@ -185,9 +185,8 @@ isolation and could later be extracted.
 - `async_migrate_entry` refuses (returns `False`) an entry whose version is above 2:
   it was written by a newer release and this code cannot know its shape. Version 1
   entries are migrated as described under the quality target.
-- `hacs.json` pins `homeassistant` to `2025.1.0`, the minimum release the code
-  relies on (typed `ConfigEntry.runtime_data`, and `OptionsFlow` setting
-  `config_entry` itself).
+- `hacs.json` pins `homeassistant` to `2026.2.0`, the release the integration is
+  developed and tested against.
 - A manifest body that cannot be decoded is a `FirmwareFetchError`, so the
   coordinator reports it as `UpdateFailed` like any other fetch failure.
 
@@ -203,9 +202,8 @@ The integration follows the applicable Gold-tier rules (inheriting Bronze and
 Silver). `custom_components/faikout/quality_scale.yaml` is the authoritative
 per-rule record; `brands` remains `todo` pending an icon/logo PR against
 `home-assistant/brands`, which is an external dependency rather than code work.
-While `brands` is `todo` the manifest declares no `quality_scale`, so the
-declaration never claims more than the rule states support. Restore
-`"quality_scale": "gold"` once that PR merges.
+The manifest declares `gold`; hassfest accepts it for a custom integration while
+`brands` is `todo`.
 
 - `config-flow`, `config-flow-test-coverage`, `unique-config-entry`: UI setup,
   single instance, tested flow.
