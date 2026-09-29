@@ -72,38 +72,38 @@ class FirmwareUpdateBinarySensor(CoordinatorEntity[FaikoutCoordinator], BinarySe
         )
 
     @property
-    def _device(self) -> FaikoutDevice | None:
-        # The tracker drops a device when MQTT stops reporting it, so every read
-        # goes through here rather than caching the instance from __init__.
-        return self._tracker.devices.get(self._device_id)
+    def _device(self) -> FaikoutDevice:
+        # Read through the tracker each time: it replaces the instance whenever a
+        # state message changes the device.
+        return self._tracker.devices[self._device_id]
 
     @property
     def _latest(self) -> str | None:
-        device = self._device
-        if device is None:
-            return None
-        return self.coordinator.data.get(device.target)
+        return self.coordinator.data.get(self._device.target)
 
     @property
     def available(self) -> bool:
-        return super().available and self._device is not None and self._latest is not None
+        return (
+            super().available
+            and not self._tracker.is_stale(self._device_id)
+            and self._latest is not None
+        )
 
     @property
     def is_on(self) -> bool | None:
-        device = self._device
         latest = self._latest
-        if device is None or latest is None:
+        if latest is None:
             return None
-        return device.version != latest
+        return self._device.is_outdated(latest)
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
         device = self._device
         return {
-            "installed_version": device.version if device else None,
+            "installed_version": device.version,
             "latest_version": self._latest,
             "channel": self.coordinator.channel.value,
-            "target": device.target if device else None,
+            "target": device.target,
         }
 
     async def async_added_to_hass(self) -> None:

@@ -1,12 +1,13 @@
 """Tests for the firmware-update binary sensor platform."""
 
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from homeassistant.components.mqtt import async_publish
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.faikout.const import CONF_CHANNEL, DOMAIN
+from custom_components.faikout.const import CONF_CHANNEL, DOMAIN, STALE_AFTER
 from custom_components.faikout.device_tracker import FaikoutDevice, FaikoutDeviceTracker
 
 STATE_OLD = json.dumps(
@@ -108,7 +109,7 @@ async def test_preexisting_device_gets_entity_at_setup(hass, mqtt_mock):
 
     async def _fake_start(self):
         await original_start(self)
-        self.devices[device.id] = device
+        self.track(device)
 
     with (
         patch(
@@ -129,3 +130,21 @@ async def test_preexisting_device_gets_entity_at_setup(hass, mqtt_mock):
     await hass.async_block_till_done()
     state = hass.states.get("binary_sensor.faikout_preexisting_firmware_update")
     assert state.state == "off"
+
+
+async def test_unavailable_when_device_goes_quiet_and_recovers(hass, mqtt_mock, freezer):
+    await _setup(hass, mqtt_mock)
+    await async_publish(hass, "state/faikout_zolder", STATE_OLD)
+    await hass.async_block_till_done()
+    entity_id = "binary_sensor.faikout_zolder_firmware_update"
+    assert hass.states.get(entity_id).state == "on"
+
+    freezer.tick(STALE_AFTER + timedelta(minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass.states.get(entity_id).state == "unavailable"
+
+    # Same payload as before it went quiet: the device is back, nothing else changed.
+    await async_publish(hass, "state/faikout_zolder", STATE_OLD)
+    await hass.async_block_till_done()
+    assert hass.states.get(entity_id).state == "on"

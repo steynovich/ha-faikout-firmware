@@ -13,6 +13,10 @@ DOMAIN = "faikout"
 CONF_CHANNEL = "channel"
 STATE_PREFIX = "state/"
 UPDATE_INTERVAL = timedelta(hours=3)
+# MQTT has no reliable "device gone" signal, so silence is the proxy: a device that
+# has published no state for this long is treated as gone until it speaks again.
+STALE_AFTER = timedelta(minutes=30)
+STALE_CHECK_INTERVAL = timedelta(minutes=1)
 SIGNAL_DEVICE_UPDATE = "faikout_device_update"
 MANUFACTURER = "RevK"
 

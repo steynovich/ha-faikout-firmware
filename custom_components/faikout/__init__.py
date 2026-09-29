@@ -81,7 +81,14 @@ async def _async_reload(hass: HomeAssistant, entry: FaikoutConfigEntry) -> None:
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: FaikoutConfigEntry, device: DeviceEntry
 ) -> bool:
-    # Faikout devices are known only from live MQTT state messages; there is no
-    # reliable "device gone" signal, so a device that stops reporting lingers in
-    # the registry. Allow the user to delete such stale devices manually.
+    # A device that is still publishing would reappear at once, so only one that
+    # has gone quiet may be removed. MQTT has no "device gone" signal; silence is
+    # the proxy, and the tracker also forgets the device so a reload cannot revive it.
+    tracker = entry.runtime_data.tracker
+    for domain, device_id in device.identifiers:
+        if domain == DOMAIN and not tracker.is_stale(device_id):
+            return False
+    for domain, device_id in device.identifiers:
+        if domain == DOMAIN:
+            tracker.forget(device_id)
     return True

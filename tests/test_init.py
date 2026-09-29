@@ -1,17 +1,30 @@
 """Tests for entry setup and unload wiring."""
 
+import json
+from datetime import timedelta
 from unittest.mock import patch
 
+from homeassistant.components.mqtt import async_publish
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.faikout import (
     async_remove_config_entry_device,
     async_unload_entry,
 )
-from custom_components.faikout.const import CONF_CHANNEL, DOMAIN, Channel
+from custom_components.faikout.const import CONF_CHANNEL, DOMAIN, STALE_AFTER, Channel
 from custom_components.faikout.ota.exceptions import FirmwareFetchError
+
+STATE = json.dumps(
+    {
+        "id": "24587CDB4CC8",
+        "app": "Faikout",
+        "version": "1a347969",
+        "build-suffix": "-S3-MINI-N4-R2",
+    }
+)
 
 
 async def test_setup_and_unload(hass, mqtt_mock):
@@ -155,21 +168,62 @@ async def test_setup_survives_an_entry_with_no_channel(hass, mqtt_mock):
     assert entry.runtime_data.coordinator.channel is Channel.STABLE
 
 
-async def test_stale_device_can_be_removed_manually(hass, mqtt_mock):
+async def _setup_with_reporting_device(hass):
     entry = MockConfigEntry(domain=DOMAIN, version=2, options={CONF_CHANNEL: "beta"})
     entry.add_to_hass(hass)
-
     with patch(
         "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",
         return_value="1a347969",
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
+    await async_publish(hass, "state/faikout_zolder", STATE)
+    await hass.async_block_till_done()
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "24587CDB4CC8")})
+    assert device is not None
+    return entry, device
 
+
+async def test_reporting_device_cannot_be_removed(hass, mqtt_mock):
+    entry, device = await _setup_with_reporting_device(hass)
+
+    assert await async_remove_config_entry_device(hass, entry, device) is False
+    assert "24587CDB4CC8" in entry.runtime_data.tracker.devices
+
+
+async def test_quiet_device_is_removed_and_forgotten(hass, mqtt_mock, freezer):
+    entry, device = await _setup_with_reporting_device(hass)
+    freezer.tick(STALE_AFTER + timedelta(minutes=1))
+
+    assert await async_remove_config_entry_device(hass, entry, device) is True
+    assert "24587CDB4CC8" not in entry.runtime_data.tracker.devices
+
+    # HA removes the device (and its entities) once the hook agrees.
+    dr.async_get(hass).async_remove_device(device.id)
+    await hass.async_block_till_done()
+    with patch(
+        "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",
+        return_value="1a347969",
+    ):
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.states.get("binary_sensor.faikout_zolder_firmware_update") is None
+    assert er.async_get(hass).async_get("binary_sensor.faikout_zolder_firmware_update") is None
+    assert entry.runtime_data.tracker.devices == {}
+
+
+async def test_device_the_tracker_never_saw_can_be_removed(hass, mqtt_mock):
+    entry = MockConfigEntry(domain=DOMAIN, version=2, options={CONF_CHANNEL: "beta"})
+    entry.add_to_hass(hass)
+    with patch(
+        "custom_components.faikout.FaikoutOtaClient.async_get_latest_version",
+        return_value="1a347969",
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
     device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, "24587CDB4CC8")},
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, "24587CDB4CC8")}
     )
 
-    # Devices are only known from live MQTT, so manual removal is always allowed.
     assert await async_remove_config_entry_device(hass, entry, device) is True

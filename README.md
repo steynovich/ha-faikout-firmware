@@ -94,13 +94,14 @@ automation:
   targets show as `unavailable`.
 - It requires the Home Assistant MQTT integration and devices that publish the
   expected `state/<hostname>` payload.
-- A device that stops reporting over MQTT is not removed automatically. Delete it
-  manually, as described below.
+- A device that stops reporting over MQTT is not removed automatically. It shows as
+  `unavailable` after 30 minutes of silence, and you can delete it manually, as
+  described below.
 
 ## Troubleshooting
 
-If the entity shows as `unavailable`, the device has not reported over MQTT yet,
-or its target is not supported. Confirm the MQTT integration is connected and
+If the entity shows as `unavailable`, the device has not reported over MQTT for 30
+minutes (or ever), or its target is not supported. Confirm the MQTT integration is connected and
 that the device is publishing `state/<hostname>` with `version` and
 `build-suffix`.
 
@@ -114,5 +115,5 @@ tracked devices.
 ## Removing a device
 
 To drop a device that no longer reports, open its device page in Home Assistant
-and use **Delete**. To remove the integration entirely, delete it from
+and use **Delete**. Home Assistant refuses while the device is still reporting. To remove the integration entirely, delete it from
 **Settings → Devices & Services**.
