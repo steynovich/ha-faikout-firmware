@@ -14,32 +14,28 @@ VALID = {
 }
 
 
-def test_returns_app_url_from_dict():
-    assert parse_manifest(VALID) == "https://ota.faikout.uk/app.bin"
-
-
-def test_returns_app_url_from_bytes():
-    assert parse_manifest(json.dumps(VALID).encode()) == "https://ota.faikout.uk/app.bin"
+def test_returns_app_url():
+    assert parse_manifest(json.dumps(VALID)) == "https://ota.faikout.uk/app.bin"
 
 
 def test_invalid_json_raises():
     with pytest.raises(ManifestError):
-        parse_manifest(b"not json{")
+        parse_manifest("not json{")
 
 
 def test_no_app_entry_raises():
     with pytest.raises(ManifestError):
-        parse_manifest({"flash": [{"url": "https://ota.faikout.uk/boot.bin"}]})
+        parse_manifest(json.dumps({"flash": [{"url": "https://ota.faikout.uk/boot.bin"}]}))
 
 
 def test_missing_flash_raises():
     with pytest.raises(ManifestError):
-        parse_manifest({"name": "Faikout"})
+        parse_manifest(json.dumps({"name": "Faikout"}))
 
 
 def test_app_entry_without_url_raises():
     with pytest.raises(ManifestError):
-        parse_manifest({"flash": [{"address": "10000", "app": True}]})
+        parse_manifest(json.dumps({"flash": [{"address": "10000", "app": True}]}))
 
 
 def test_non_dict_json_raises():

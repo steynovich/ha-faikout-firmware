@@ -68,7 +68,7 @@ class FaikoutOtaClient:
         except (aiohttp.ClientConnectionError, TimeoutError) as err:
             # The host never answered; retryable, and not a sign of a bad URL.
             raise FirmwareUnavailableError(f"failed to fetch {url}: {err}") from err
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, UnicodeDecodeError) as err:
             raise FirmwareFetchError(f"failed to fetch {url}: {err}") from err
 
     async def _get_text(self, url: str) -> str:

@@ -183,3 +183,10 @@ async def test_head_fetch_error_wrapped():
 
     with pytest.raises(FirmwareFetchError):
         await FaikoutOtaClient(ManifestThenBoomSession()).async_get_latest_version("https://m")
+
+
+@pytest.mark.asyncio
+async def test_undecodable_manifest_body_is_a_fetch_error():
+    session = FakeSession([FakeResponse(200, b"\xff\xfe not utf-8")])
+    with pytest.raises(FirmwareFetchError):
+        await FaikoutOtaClient(session).async_get_latest_version("https://m")

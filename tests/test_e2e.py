@@ -8,7 +8,7 @@ import aiohttp
 import pytest
 import pytest_socket
 
-from custom_components.faikout.const import Channel, manifest_url_for
+from custom_components.faikout.const import MANIFEST_URLS, Channel
 from custom_components.faikout.ota.client import FaikoutOtaClient
 from custom_components.faikout.ota.exceptions import FirmwareUnavailableError
 
@@ -20,8 +20,7 @@ async def test_live_version_is_nonempty(channel, socket_enabled):
     # every test by default; the `socket_enabled` fixture lifts the blanket
     # socket ban, and this call lifts the host allow-list for the real OTA host.
     pytest_socket.socket_allow_hosts(["ota.faikout.uk"], allow_unix_socket=True)
-    url = manifest_url_for("Faikout-S3-MINI-N4-R2", channel)
-    assert url is not None
+    url = MANIFEST_URLS[("Faikout-S3-MINI-N4-R2", channel)]
     try:
         async with aiohttp.ClientSession() as session:
             version = await FaikoutOtaClient(session).async_get_latest_version(url)

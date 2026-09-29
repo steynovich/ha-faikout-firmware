@@ -5,6 +5,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.faikout.const import Channel
 from custom_components.faikout.coordinator import FaikoutCoordinator
+from custom_components.faikout.ota.client import FaikoutOtaClient
 from custom_components.faikout.ota.exceptions import (
     FirmwareFetchError,
     FirmwareParseError,
@@ -180,3 +181,26 @@ async def test_partial_failure_is_not_silent(hass, caplog, monkeypatch):
     warnings = _records(caplog, logging.WARNING)
     assert len(warnings) == 1
     assert "Bad-Target" in warnings[0].getMessage()
+
+
+async def test_undecodable_manifest_becomes_update_failed(hass):
+    class UndecodableSession:
+        def get(self, url, headers=None, timeout=None):
+            return _UndecodableResponse()
+
+    class _UndecodableResponse:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        def raise_for_status(self):
+            pass
+
+        async def text(self):
+            return b"\xff\xfe".decode()
+
+    coordinator = FaikoutCoordinator(hass, FaikoutOtaClient(UndecodableSession()), Channel.BETA)
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()

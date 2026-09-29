@@ -10,7 +10,7 @@ from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .const import DEFAULT_STATE_PREFIX, SIGNAL_DEVICE_UPDATE
+from .const import SIGNAL_DEVICE_UPDATE, STATE_PREFIX
 
 
 @dataclass(frozen=True)
@@ -21,9 +21,7 @@ class FaikoutDevice:
     target: str
 
 
-def parse_state_payload(
-    topic: str, payload: str, *, prefix: str = DEFAULT_STATE_PREFIX
-) -> FaikoutDevice | None:
+def parse_state_payload(topic: str, payload: str) -> FaikoutDevice | None:
     """Parse a Faikout MQTT state payload into a FaikoutDevice, or None."""
     try:
         data = json.loads(payload)
@@ -36,22 +34,21 @@ def parse_state_payload(
     suffix = data.get("build-suffix")
     if not (isinstance(dev_id, str) and isinstance(version, str) and isinstance(suffix, str)):
         return None
-    name = topic[len(prefix) :] if topic.startswith(prefix) else topic
+    name = topic.removeprefix(STATE_PREFIX)
     return FaikoutDevice(id=dev_id, name=name, version=version, target=f"Faikout{suffix}")
 
 
 class FaikoutDeviceTracker:
     """Subscribe to Faikout state topics and maintain a device map."""
 
-    def __init__(self, hass: HomeAssistant, *, prefix: str = DEFAULT_STATE_PREFIX) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
-        self._prefix = prefix
         self.devices: dict[str, FaikoutDevice] = {}
         self._unsub: Callable[[], None] | None = None
 
     async def async_start(self) -> None:
         self._unsub = await mqtt.async_subscribe(
-            self._hass, f"{self._prefix}+", self._handle_message, qos=0
+            self._hass, f"{STATE_PREFIX}+", self._handle_message, qos=0
         )
 
     async def async_stop(self) -> None:
@@ -63,7 +60,7 @@ class FaikoutDeviceTracker:
     def _handle_message(self, msg: mqtt.ReceiveMessage) -> None:
         if not isinstance(msg.payload, str):
             return
-        device = parse_state_payload(msg.topic, msg.payload, prefix=self._prefix)
+        device = parse_state_payload(msg.topic, msg.payload)
         if device is None:
             return
         previous = self.devices.get(device.id)

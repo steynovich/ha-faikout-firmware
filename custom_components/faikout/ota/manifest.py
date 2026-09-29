@@ -3,20 +3,16 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from .exceptions import ManifestError
 
 
-def parse_manifest(data: bytes | str | dict[str, Any]) -> str:
+def parse_manifest(text: str) -> str:
     """Return the URL of the ``flash`` entry with ``app: true``."""
-    if isinstance(data, (bytes, str)):
-        try:
-            parsed = json.loads(data)
-        except (json.JSONDecodeError, UnicodeDecodeError) as err:
-            raise ManifestError(f"manifest is not valid JSON: {err}") from err
-    else:
-        parsed = data
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as err:
+        raise ManifestError(f"manifest is not valid JSON: {err}") from err
 
     if not isinstance(parsed, dict):
         raise ManifestError("manifest must be a JSON object")
