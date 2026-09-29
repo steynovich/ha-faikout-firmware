@@ -161,6 +161,9 @@ The integration follows the applicable Gold-tier rules (inheriting Bronze and
 Silver). `custom_components/faikout/quality_scale.yaml` is the authoritative
 per-rule record; `brands` remains `todo` pending an icon/logo PR against
 `home-assistant/brands`, which is an external dependency rather than code work.
+While `brands` is `todo` the manifest declares no `quality_scale`, so the
+declaration never claims more than the rule states support. Restore
+`"quality_scale": "gold"` once that PR merges.
 
 - `config-flow`, `config-flow-test-coverage`, `unique-config-entry`: UI setup,
   single instance, tested flow.

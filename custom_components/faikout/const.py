@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from datetime import timedelta
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
 
 DOMAIN = "faikout"
 CONF_CHANNEL = "channel"
@@ -16,6 +20,14 @@ MANUFACTURER = "RevK"
 class Channel(StrEnum):
     STABLE = "stable"
     BETA = "beta"
+
+
+DEFAULT_CHANNEL = Channel.STABLE
+
+
+def get_channel(entry: ConfigEntry) -> Channel:
+    """Return the firmware channel chosen for an entry, defaulting when unset."""
+    return Channel(entry.options.get(CONF_CHANNEL, DEFAULT_CHANNEL.value))
 
 
 MANIFEST_URLS: dict[tuple[str, Channel], str] = {

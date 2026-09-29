@@ -14,9 +14,13 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import callback
 
-from .const import CONF_CHANNEL, DOMAIN, Channel
+from .const import CONF_CHANNEL, DEFAULT_CHANNEL, DOMAIN, Channel, get_channel
 
-_CHANNELS = [c.value for c in Channel]
+
+def _channel_schema(default: Channel = DEFAULT_CHANNEL) -> vol.Schema:
+    return vol.Schema(
+        {vol.Required(CONF_CHANNEL, default=default.value): vol.In([c.value for c in Channel])}
+    )
 
 
 class FaikoutConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -36,10 +40,7 @@ class FaikoutConfigFlow(ConfigFlow, domain=DOMAIN):
             # have picked a channel.
             if not await mqtt.async_wait_for_mqtt_client(self.hass):
                 return self.async_abort(reason="mqtt_unavailable")
-            schema = vol.Schema(
-                {vol.Required(CONF_CHANNEL, default=Channel.STABLE.value): vol.In(_CHANNELS)}
-            )
-            return self.async_show_form(step_id="user", data_schema=schema)
+            return self.async_show_form(step_id="user", data_schema=_channel_schema())
         # The channel does not establish the connection, so it lives in options and
         # stays a single source of truth for the options flow to rewrite.
         return self.async_create_entry(title="Faikout Firmware Update", data={}, options=user_input)
@@ -56,6 +57,5 @@ class FaikoutOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
-        current = self.config_entry.options.get(CONF_CHANNEL, Channel.STABLE.value)
-        schema = vol.Schema({vol.Required(CONF_CHANNEL, default=current): vol.In(_CHANNELS)})
+        schema = _channel_schema(get_channel(self.config_entry))
         return self.async_show_form(step_id="init", data_schema=schema)

@@ -12,7 +12,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import CONF_CHANNEL, DOMAIN, Channel
+from .const import CONF_CHANNEL, DEFAULT_CHANNEL, DOMAIN, get_channel
 from .coordinator import FaikoutCoordinator
 from .device_tracker import FaikoutDeviceTracker
 from .ota.client import FaikoutOtaClient
@@ -38,7 +38,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) ->
         # change, so every reader had to consult both. Collapse onto options,
         # preferring the options value because it is the one the user last chose.
         data = dict(entry.data)
-        stale_channel = data.pop(CONF_CHANNEL, Channel.STABLE.value)
+        stale_channel = data.pop(CONF_CHANNEL, DEFAULT_CHANNEL.value)
         channel = entry.options.get(CONF_CHANNEL, stale_channel)
         hass.config_entries.async_update_entry(
             entry, data=data, options={**entry.options, CONF_CHANNEL: channel}, version=2
@@ -50,9 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: FaikoutConfigEntry) -> b
     if not await mqtt.async_wait_for_mqtt_client(hass):
         raise ConfigEntryNotReady(translation_domain=DOMAIN, translation_key="mqtt_unavailable")
 
-    channel = Channel(entry.options.get(CONF_CHANNEL, Channel.STABLE.value))
     client = FaikoutOtaClient(async_get_clientsession(hass))
-    coordinator = FaikoutCoordinator(hass, client, channel)
+    coordinator = FaikoutCoordinator(hass, client, get_channel(entry))
     tracker = FaikoutDeviceTracker(hass)
 
     await tracker.async_start()
